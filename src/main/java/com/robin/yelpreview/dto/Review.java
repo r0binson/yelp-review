@@ -6,5 +6,6 @@ import lombok.Data;
 public class Review {
   private User user;
   private String review;
+  private Emotion emotion;
 
 }

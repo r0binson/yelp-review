@@ -1,18 +1,14 @@
 package com.robin.yelpreview.controller;
 
-import com.robin.yelpreview.dto.BusinessDTO;
-import com.robin.yelpreview.dto.Review;
-import com.robin.yelpreview.dto.User;
+import com.robin.yelpreview.dto.*;
+import com.robin.yelpreview.service.CallGoogleVisionApiService;
 import com.robin.yelpreview.service.CallYelpService;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +20,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/yelp-review")
 public class YelpReviewController {
   private final CallYelpService callYelpService;
+  private final CallGoogleVisionApiService callGoogleVisionApiService;
 
 
   @GetMapping("/search-business/{location}")
@@ -52,13 +49,24 @@ public class YelpReviewController {
       User user = new User();
       user.setId((String) usr.get("id"));
       user.setName((String) usr.get("name"));
-      user.setImageUrl((String) usr.get("image_url"));
+      String imageUrl =(String) usr.get("image_url");
+      user.setImageUrl(imageUrl);
       user.setProfileUrl((String) usr.get("profile_url"));
       Review review = new Review();
       review.setUser(user);
       review.setReview((String) rev.get("text"));
+      review.setEmotion(callGoogleVisionApiService.getEmotions(imageUrl));
       return review;
     }).collect(Collectors.toList());
     return ResponseEntity.ok(reviews);
   }
+
+
+  @PostMapping("/emotions")
+  @ApiOperation(value = "Returns emotions of an image profile")
+  public ResponseEntity getEmotions(String imageUri) {
+    Emotion emotion = callGoogleVisionApiService.getEmotions(imageUri);
+    return ResponseEntity.ok(emotion);
+  }
+
 }
